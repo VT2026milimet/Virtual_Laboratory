@@ -1,0 +1,8 @@
+// Bạn chỉ cần bọc nội dung vào trong dấu huyền ` ` như thế này
+const rawData = 
+`
+8 | Điều chế H | Phản ứng tạo khí Hidro | Ống nghiệm, Giá ống nghiệm, Ống dẫn | Kẽm (Zn), Axit HCl | Zn + 2HCl -> ZnCl2 + H2 | Axit tác dụng kim loại giải phóng Hidro
+8 | Bài A | Phản ứng tráng bạc | Ống nghiệm, Đèn cồn, Cốc thủy tinh | Glucose, AgNO3, NH3 | C6H12O6 + Ag2O -> C6H12O7 + 2Ag | Glucose có tính khử
+9 | Bài B | Phản ứng tạo khí Hidro | Ống nghiệm, Giá ống nghiệm, Ống dẫn | Kẽm (Zn), Axit HCl | Zn + 2HCl -> ZnCl2 + H2 | Axit tác dụng kim loại giải phóng Hidro
+9 | Bài G | Phản ứng tráng bạc | Ống nghiệm, Đèn cồn, Cốc thủy tinh | Glucose, AgNO3, NH3 | C6H12O6 + Ag2O -> C6H12O7 + 2Ag | Glucose có tính khử
+`;

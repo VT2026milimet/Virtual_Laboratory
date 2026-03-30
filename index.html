@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phòng Thí Nghiệm Ảo - V60.0</title>
+    <script src="data.js"></script>
+    <script src="tools.js"></script>
+    <script src="chemicals.js"></script>
+    <script src="glassware.js"></script>
+    <script src="reagents.js"></script>
+    <script src="actions.js"></script> 
+    <script src="reactions.js"></script>
+    <style>
+        /* --- GIỮ NGUYÊN 100% STYLE GỐC --- */
+        :root {
+            --primary-blue: #005a82; --gold-accent: #d4af37; --white: #ffffff;
+            --bg-light: #f0f7f9; --safety-green: #2ecc71;
+        }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: radial-gradient(circle, #ffffff 0%, #e8f4f8 100%); }
+        #stage { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .screen { position: absolute; width: 90%; max-width: 1100px; height: 650px; background: var(--white); border-radius: 40px; display: none; flex-direction: row; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.15); }
+        .active { display: flex; }
+
+        .doctor-side { flex: 1.1; background: var(--bg-light); position: relative; display: flex; align-items: center; justify-content: center; border-right: 6px solid var(--gold-accent); }
+        .doctor-container { width: 100%; height: 100%; animation: idleAnt 4s infinite ease-in-out; transform-origin: bottom; }
+        @keyframes idleAnt { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.01) translateY(-2px); } }
+        .doctor-img { width: 100%; height: 100%; object-fit: cover; }
+        .content-side { flex: 1.3; padding: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .page1-h1 { color: var(--primary-blue); font-size: 2.2rem; margin-bottom: 10px; }
+        .doctor-name { color: var(--gold-accent); font-size: 2.2rem; font-weight: 700; margin-bottom: 25px; display: block; white-space: nowrap; }
+        .description { color: #333; font-size: 1.15rem; line-height: 1.6; margin-bottom: 40px; font-weight: 500; }
+        .select-box { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 12px; font-size: 1rem; outline: none; background: #fafafa; }
+        .btn-main { background: var(--gold-accent); color: white; border: none; padding: 18px 40px; border-radius: 50px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: 0.1s; box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4); text-transform: uppercase; }
+
+        #step3 { background-image: url('phongthinghiem.jpg'); background-size: 100% 100%; position: relative; flex-direction: column; padding: 0; }
+        #step4 { background-image: url('phonglab.jpg'); background-size: 100% 100%; position: relative; flex-direction: row; padding: 0; }
+        
+        .doctor-avatar { position: absolute; top: 20px; right: 20px; width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--gold-accent); background: #fff; z-index: 200; overflow: hidden; }
+        .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        .speaking { animation: bobbing 0.5s infinite ease-in-out; }
+        @keyframes bobbing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .hotspot { position: absolute; cursor: pointer; border-radius: 5px; z-index: 100; }
+        #target-blouse { top: 22%; left: 10%; width: 18%; height: 55%; }
+        #target-glasses { top: 52%; right: 7%; width: 20%; height: 12%; }
+        #target-rules { top: 12%; right: 9%; width: 15%; height: 35%; }
+        .check-mark { position: absolute; color: var(--safety-green); font-size: 40px; font-weight: bold; display: none; pointer-events: none; z-index: 110; }
+        
+        #rules-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5); width: 70vh; height: 85vh; max-width: 500px; max-height: 600px; background: #fdfdfd; border: 10px solid var(--gold-accent); border-radius: 10px; box-shadow: 0 0 100px rgba(0,0,0,0.6); z-index: 300; display: none; opacity: 0; transition: transform 0.8s; }
+        #rules-overlay.show { transform: translate(-50%, -50%) scale(1); opacity: 1; display: block; }
+
+        #s4-sidebar { width: 180px; background: rgba(0, 90, 130, 0.95); display: flex; flex-direction: column; padding: 15px 10px; gap: 8px; z-index: 10; border-right: 2px solid var(--gold-accent); }
+        .s4-cat-btn { background: white; color: var(--primary-blue); border: none; padding: 10px 8px; border-radius: 8px; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-align: left; }
+        .s4-cat-btn:hover, .s4-cat-btn.active-cat { background: var(--gold-accent); color: white; }
+        
+        #s4-main-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+        #s4-icon-grid { flex: 1; padding: 20px; padding-right: 170px; display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 15px; overflow-y: auto; background: rgba(255,255,255,0.05); }
+        .s4-unit { display: flex; flex-direction: column; align-items: center; cursor: pointer; background: white; padding: 5px; border-radius: 12px; border: 2px solid #eee; transition: 0.2s; height: fit-content; }
+        .s4-img { width: 105px; height: 90px; object-fit: contain; }
+        .s4-label { font-size: 0.65rem; font-weight: bold; text-align: center; color: #004d6e; width: 100%; }
+
+        #s4-tray-container { height: 160px; background: rgba(255, 255, 255, 0.95); border-top: 4px solid var(--gold-accent); display: flex; flex-direction: column; padding: 10px; position: relative; }
+        #s4-tray { flex: 1; display: flex; align-items: center; gap: 12px; overflow-x: auto; }
+        .tray-item { width: 130px; height: 130px; background: #fff; border-radius: 8px; flex-shrink: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #ddd; }
+        
+        .btn-check { position: absolute; top: -25px; right: 20px; background: var(--safety-green); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
+
+        #step5 { background-image: url('phonglab_main.jpg'); background-size: 100% 100%; flex-direction: column; align-items: center; position: relative; }
+        #workbench-area { position: absolute; inset: 0; z-index: 10; pointer-events: auto; overflow: visible !important; }
+
+        .draggable-item { position: absolute; display: inline-block; cursor: grab; user-select: none; touch-action: none; padding: 0; margin: 0; }
+        .real-tool-img { width: 138px; height: auto; object-fit: contain; filter: drop-shadow(0 8px 6px rgba(0,0,0,0.3)); display: block; }
+        .reagent-bottle img { width: 150px !important; height: auto !important; filter: drop-shadow(0 15px 12px rgba(0,0,0,0.4)); display: block; }
+        
+        .shake-anim { animation: shakeEffect 0.4s ease-in-out infinite; }
+        @keyframes shakeEffect { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(3deg); } 75% { transform: rotate(-3deg); } }
+        .lamp-flame { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); width: 15px; height: 28px; background: radial-gradient(circle at bottom, #fff700, #ff6600, transparent); border-radius: 50% 50% 20% 20%; filter: blur(1px); animation: flicker 0.1s infinite alternate; display: none; }
+        @keyframes flicker { from { transform: translateX(-50%) scale(1); opacity: 0.8; } to { transform: translateX(-50%) scale(1.1); opacity: 1; } }
+        
+        .glass-container { position: relative; display: inline-block; overflow: hidden; }
+        .liquid-layer { position: absolute; bottom: 0; left: 0; width: 100%; z-index: 2; transition: height 0.8s ease-in-out; pointer-events: none; }
+
+        .drop-particle { position: fixed; width: 8px; height: 12px; border-radius: 50%; animation: fallDown 0.6s linear forwards; z-index: 99999; pointer-events: none; }
+        @keyframes fallDown { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(100px) scale(0.5); opacity: 0; } }
+
+        .btn-back-theory { position: absolute; bottom: 25px; left: 25px; z-index: 2000; background: linear-gradient(135deg, #ff9966, #ff5e62); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 6px 15px rgba(255, 94, 98, 0.4); transition: 0.3s; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .btn-back-theory:hover { transform: scale(1.08) translateY(-2px); box-shadow: 0 8px 20px rgba(255, 94, 98, 0.6); filter: brightness(1.1); }
+        
+
+
+/* Chỉ tác động duy nhất đến bảng phương trình ở Bước 5 */
+#equation-display {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 45, 66, 0.9); /* Màu xanh đậm để nổi bật */
+    color: #ffd700; /* Chữ màu vàng gold */
+    padding: 12px 35px;
+    border: 2px solid var(--gold-accent);
+    border-radius: 15px;
+    font-size: 1.6rem;
+    font-weight: bold;
+    z-index: 5000;
+    display: none; /* Mặc định ẩn */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+
+    /* Cấu hình quan trọng để ép 1 dòng */
+    white-space: nowrap;  /* Tuyệt đối không cho xuống dòng */
+    overflow: hidden;     /* Nếu dài quá sẽ ẩn phần thừa thay vì đẩy xuống */
+    max-width: 90%;       /* Tránh tràn mép màn hình */
+}
+
+        /* --- NÚT KÍNH LÚP NỔI Ở GÓC DƯỚI BÊN PHẢI --- */
+        #mag-floating-btn {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            z-index: 2500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background 0.2s;
+            user-select: none;
+        }
+        #mag-floating-btn:hover {
+            transform: scale(1.1);
+            background: #004d6e;
+        }
+        #mag-floating-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* --- CSS KÍNH LÚP PHÓNG ĐẠI --- */
+        #magnifier-glass { 
+            position: absolute; width: 200px; height: 200px; border: 6px solid #444; 
+            border-radius: 50%; overflow: hidden; display: none; z-index: 999999; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.6); pointer-events: none;
+            background-color: white;
+        }
+        #magnifier-content {
+            position: absolute; width: 300%; height: 300%; 
+            transform-origin: 0 0; transform: scale(2);
+        }
+/* Lớp phủ màu đồng cho đinh sắt */
+.copper-coated {
+    clip-path: inset(50% 0 0 0); /* Chỉ hiển thị từ 50% trở xuống đáy */
+    filter: sepia(1) saturate(5) hue-rotate(-50deg) brightness(0.8) !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Không làm gián đoạn việc kéo thả */
+}
+
+/* Container để chứa cả ảnh gốc và lớp phủ */
+.iron-nail-wrapper {
+    position: relative;
+    display: inline-block;
+}
+    </style>
+</head>
+<body>
+    <div id="stage">
+        <div id="step1" class="screen active">
+           <div class="doctor-side">
+                <div class="doctor-container"><img src="kien-sang.jpg" class="doctor-img"></div>
+            </div>
+            <div class="content-side" style="align-items: center; text-align: center;">
+                <h1 class="page1-h1">Chào mừng bạn đến với<br>phòng thí nghiệm ảo.</h1>
+                <span class="doctor-name">Tôi là Tiến sĩ Kiến Sáng</span>
+                <p class="description">Bạn đã sẵn sàng bước vào thế giới hóa học đầy màu sắc và những thí nghiệm bất ngờ chưa?</p>
+                <button class="btn-main" onclick="handleStart()">Khám phá ngay</button>
+            </div>
+        </div>
+        <div id="step2" class="screen">
+            <div class="doctor-side"><div class="doctor-container"><img src="kien-sang2.jpg" class="doctor-img"></div></div>
+            <div class="content-side">
+                <h2 style="color: var(--primary-blue); margin: 0 0 5px 0;">Xin chào!</h2>
+                <div class="selection-group"><label class="selection-label">1. Chọn Lớp học:</label><select class="select-box" id="grade-select" onchange="updateLessons()"></select></div>
+                <div class="selection-group"><label class="selection-label">2. Chọn Bài học:</label><select class="select-box" id="lesson-select" onchange="updateExperiments()" disabled></select></div>
+                <div class="selection-group"><label class="selection-label">3. Chọn Thí nghiệm:</label><select class="select-box" id="exp-select" disabled></select></div>
+                <button class="btn-main" style="width: 100%; margin-top: 30px;" onclick="goToStep3()">VÀO PHÒNG THÍ NGHIỆM</button>
+            </div>
+        </div>
+        <div id="step3" class="screen">
+            <div id="dr-avatar-s3" class="doctor-avatar"><img src="avatar.jpg" class="avatar-img"></div>
+            <div id="target-blouse" class="hotspot" onclick="checkItem('blouse')"></div>
+            <div id="target-glasses" class="hotspot" onclick="checkItem('glasses')"></div>
+            <div id="target-rules" class="hotspot" onclick="checkItem('rules')"></div>
+            <div id="ok-blouse" class="check-mark" style="top:30%; left:15%;">✓</div>
+            <div id="ok-glasses" class="check-mark" style="top:53%; right:15%;">✓</div>
+            <div id="ok-rules" class="check-mark" style="top:20%; right:15%;">✓</div>
+            <div id="rules-overlay"><button style="position:absolute;top:10px;right:10px;background:red;color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;" onclick="closeRules()">✕</button><img src="Noiquy.jpg" style="width:100%;height:100%;object-fit:contain;"></div>
+            <button class="btn-back-theory" onclick="backToStep2()">Đổi thí nghiệm</button>
+        </div>
+        <div id="step4" class="screen">
+            <div id="s4-sidebar"></div>
+            <div id="s4-main-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
+                <div id="dr-avatar-s4" class="doctor-avatar"><img src="avatar.jpg" class="avatar-img"></div>
+                <div id="s4-icon-grid"></div>
+                <div id="s4-tray-container">
+                    <button class="btn-check" id="main-check-btn" onclick="validateCurrentMode()">ĐÃ CHỌN XONG DỤNG CỤ</button>
+                    <div id="s4-tray"></div>
+                </div>
+            </div>
+            <button class="btn-back-theory" onclick="backToStep2()">Đổi thí nghiệm</button>
+        </div>
+        <div id="step5" class="screen">
+            <div id="dr-avatar-s5" class="doctor-avatar"><img src="avatar.jpg" class="avatar-img"></div>
+            <div id="workbench-area"></div>
+            <div id="magnifier-glass"><div id="magnifier-content"></div></div>
+            <div id="mag-floating-btn" onclick="toggleMagnifier()" title="Bật/Tắt Kính lúp">🔍</div>
+            <button class="btn-back-theory" onclick="backToStep2()">Đổi thí nghiệm</button>
+	    <div id="equation-display"></div>
+
+        </div>
+    </div>
+
+    <script>
+        let experimentData = {}, groupedTools = {}, groupedChems = {};
+        let currentExp = null, selectedItems = [], currentMode = "TOOLS", finalSelection = { tools: [], chems: [] };
+        const iconPath = "icons/"; const synth = window.speechSynthesis;
+        let checks = { blouse: false, glasses: false, canCheckRules: false };
+        let magnifierActive = false;
+
+        function speak(text, callback, avatarId = 'dr-avatar-s3') {
+            synth.cancel(); const m = new SpeechSynthesisUtterance(text); m.lang = 'vi-VN';
+            const v = synth.getVoices().find(v => v.lang.includes('vi') && (v.name.includes('Google Lê') || v.name.includes('Nam'))) || synth.getVoices()[0];
+            m.voice = v; const av = document.getElementById(avatarId); if(av) av.classList.add('speaking');
+            m.onend = () => { if(av) av.classList.remove('speaking'); if (callback) callback(); };
+            setTimeout(() => synth.speak(m), 100);
+        }
+
+        function backToStep2() {
+            synth.cancel(); magnifierActive = false;
+const eqDisplay = document.getElementById('equation-display');
+    if (eqDisplay) {
+        eqDisplay.style.display = 'none';
+        eqDisplay.innerText = ''; 
+    }
+
+            document.getElementById('magnifier-glass').style.display = 'none';
+            document.getElementById('mag-floating-btn').style.background = "var(--primary-blue)";
+            checks = { blouse: false, glasses: false, canCheckRules: false };
+            document.querySelectorAll('.check-mark').forEach(el => el.style.display = 'none');
+            selectedItems = []; finalSelection = { tools: [], chems: [] }; currentMode = "TOOLS";
+            document.getElementById('s4-tray').innerHTML = ""; 
+            document.getElementById('main-check-btn').innerText = "ĐÃ CHỌN XONG DỤNG CỤ";
+            showScreen('step2');
+        }
+
+        function initApp() {
+            if (typeof rawData !== 'undefined') {
+                rawData.trim().split('\n').forEach(line => {
+                    if (!line.includes('|')) return;
+                    const [lop, bai, ten, dungcu, hoachat, pt, mota, effect, extra] = line.split('|').map(s => s.trim());
+                    const k = "Lớp " + lop; 
+                    if (!experimentData[k]) experimentData[k] = {};
+                    if (!experimentData[k][bai]) experimentData[k][bai] = [];
+                    experimentData[k][bai].push({ name: ten, tools: dungcu, chems: hoachat, eq: pt, info: extra, description: mota, effect: effect });
+                });
+                initGrades();
+            }
+            if (typeof toolCategoryData !== 'undefined') {
+                toolCategoryData.trim().split('\n').forEach(line => {
+                    if (!line.includes('|')) return;
+                    const [nhom, ten, file] = line.split('|').map(s => s.trim());
+                    if (!groupedTools[nhom]) groupedTools[nhom] = [];
+                    groupedTools[nhom].push({ n: ten, f: file });
+                });
+            }
+            if (typeof chemicalDataRaw !== 'undefined') {
+                chemicalDataRaw.trim().split('\n').forEach(line => {
+                    if (!line.includes('|')) return;
+                    const [nhom, ten, file, congthuc] = line.split('|').map(s => s.trim());
+                    if (!groupedChems[nhom]) groupedChems[nhom] = [];
+                    groupedChems[nhom].push({ n: ten, f: file, formula: congthuc });
+                });
+            }
+        }
+
+        function handleStart() { showScreen('step2'); speak("Xin chào! Mình là tiến sĩ Kiến Sáng. Mời bạn chọn thí nghiệm nhé!"); }
+        
+        function goToStep3() { 
+            const gs = document.getElementById('grade-select').value; 
+            const ls = document.getElementById('lesson-select').value; 
+            const sel = document.getElementById('exp-select').value; 
+            if (!sel) return alert("Chọn thí nghiệm!");
+            window.currentExp = experimentData[gs][ls].find(e => e.name === sel); 
+            currentExp = window.currentExp;
+            showScreen('step3'); speak("khoan đã, hãy trang bị bảo hộ."); 
+        }
+
+        function checkItem(i) { if (i === 'blouse' || i === 'glasses') { if (checks[i]) return; checks[i] = true; document.getElementById('ok-' + i).style.display = 'block'; speak(i === 'blouse' ? "Đã mặc áo." : "Đã đeo kính.", () => { if (checks.blouse && checks.glasses) setTimeout(() => speak("Hãy đọc nội quy nào", () => checks.canCheckRules = true), 500); }); } else if (i === 'rules' && checks.canCheckRules) { const o = document.getElementById('rules-overlay'); o.style.display = 'block'; setTimeout(() => o.classList.add('show'), 50); } }
+        function closeRules() { document.getElementById('rules-overlay').classList.remove('show'); setTimeout(() => { document.getElementById('rules-overlay').style.display = 'none'; document.getElementById('ok-rules').style.display = 'block'; showScreen('step4'); setupSidebar("TOOLS"); speak("Hãy chuẩn bị dụng cụ thí nghiệm.", null, 'dr-avatar-s4'); }, 800); }
+        function initGrades() { const gs = document.getElementById('grade-select'); gs.innerHTML = '<option value="">-- Lớp --</option>'; Object.keys(experimentData).forEach(g => gs.innerHTML += `<option value="${g}">${g}</option>`); }
+        function updateLessons() { const g = document.getElementById('grade-select').value; const ls = document.getElementById('lesson-select'); ls.innerHTML = '<option value="">-- Bài --</option>'; if (g) { ls.disabled = false; Object.keys(experimentData[g]).forEach(l => ls.innerHTML += `<option value="${l}">${l}</option>`); } }
+        function updateExperiments() { const g = document.getElementById('grade-select').value; const l = document.getElementById('lesson-select').value; const es = document.getElementById('exp-select'); es.innerHTML = '<option value="">-- Thí nghiệm --</option>'; if (l) { es.disabled = false; experimentData[g][l].forEach(e => es.innerHTML += `<option value="${e.name}">${e.name}</option>`); } }
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+        function setupSidebar(mode) { currentMode = mode; const sidebar = document.getElementById('s4-sidebar'); sidebar.innerHTML = ""; const data = (mode === "TOOLS") ? groupedTools : groupedChems; Object.keys(data).forEach((nhom, i) => { const btn = document.createElement('button'); btn.className = 's4-cat-btn'; btn.innerText = (i + 1) + ". " + nhom; btn.onclick = () => renderGrid(nhom); sidebar.appendChild(btn); }); renderGrid(Object.keys(data)[0]); }
+        function renderGrid(nhom) { const grid = document.getElementById('s4-icon-grid'); grid.innerHTML = ""; const items = (currentMode === "TOOLS") ? groupedTools[nhom] : groupedChems[nhom]; items.forEach(t => { const d = document.createElement('div'); d.className = 's4-unit'; d.onclick = () => { const reqStr = (currentMode === "TOOLS") ? currentExp.tools : currentExp.chems; if (!reqStr.split(',').map(s => s.trim()).includes(t.n)) return speak("Món " + t.n + " này không cần thiết đâu.", null, 'dr-avatar-s4'); if (selectedItems.includes(t.n)) return; selectedItems.push(t.n); const tray = document.getElementById('s4-tray'); const item = document.createElement('div'); item.className = 'tray-item'; item.innerHTML = `<img src="${iconPath}${t.f}" style="width:100%; height: 100%; object-fit: contain;">`; tray.appendChild(item); speak("Đã lấy " + t.n, null, 'dr-avatar-s4'); }; d.innerHTML = `<img src="${iconPath}${t.f}" class="s4-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1048/1048953.png'"><span class="s4-label">${t.n}</span>`; grid.appendChild(d); }); }
+        function validateCurrentMode() { const reqStr = (currentMode === "TOOLS") ? currentExp.tools : currentExp.chems; const missing = reqStr.split(',').map(s => s.trim()).filter(x => !selectedItems.includes(x)); if (missing.length > 0) speak("Bạn vẫn còn thiếu: " + missing.join(", "), null, 'dr-avatar-s4'); else { if (currentMode === "TOOLS") { finalSelection.tools = [...selectedItems]; selectedItems = []; document.getElementById('s4-tray').innerHTML = ""; document.getElementById('main-check-btn').innerText = "ĐÃ CHỌN XONG HÓA CHẤT"; setupSidebar("CHEMICALS"); speak("Tuyệt vời! Bây giờ hãy chọn các Hóa chất nhé!", null, 'dr-avatar-s4'); } else { finalSelection.chems = [...selectedItems]; speak("Xong rồi! Mời bạn thực hành.", () => goToStep5(), 'dr-avatar-s4'); } } }
+
+        function createDraggableItem(name, x, y, type) {
+            const div = document.createElement('div');
+            div.className = 'draggable-item'; div.style.left = x + "px"; div.style.top = y + "px";
+            if (type === "reagent") {
+                let foundImg = "Quytim.jpg"; let formula = name; 
+                const chemLines = chemicalDataRaw.trim().split('\n');
+                for (let line of chemLines) {
+                    const p = line.split('|').map(s => s.trim());
+                    if (p.length >= 4 && p[1] === name) { foundImg = p[2]; formula = p[3]; break; }
+                }
+                div.innerHTML = `<div class="reagent-bottle"><img src="assets/chemicals/${foundImg}" class="real-tool-img" alt="${formula}"></div>`;
+            } else {
+                const uniqueId = "id-" + Math.random().toString(36).substr(2, 9);
+                div.innerHTML = Glassware.render(name, uniqueId);
+                if(typeof LabActions !== 'undefined') LabActions.renderExtra(div, name);
+                div.ondblclick = () => { if(typeof LabActions !== 'undefined') LabActions.execute(div, name); };
+            }
+            return div;
+        }
+
+function setupDragging() {
+    let active = null, offset = { x: 0, y: 0 };
+    const area = document.getElementById('workbench-area');
+
+    area.addEventListener('mousedown', (e) => {
+        const el = e.target.closest('.draggable-item');
+        if (el) { 
+            active = el; 
+            offset.x = e.clientX - active.offsetLeft; 
+            offset.y = e.clientY - active.offsetTop; 
+            active.style.zIndex = 5000; 
+
+            // MỚI: Khi vừa nhấc vật lên, tạm thời coi như nó không còn nằm trong ống nghiệm nào cả
+            const img = active.querySelector('img');
+            if (img && img.src.includes("Dinhsat")) {
+                document.querySelectorAll('.draggable-item').forEach(container => {
+                    if (container.dataset.containedSolidId) {
+                        delete container.dataset.containedSolidId;
+                        if(typeof LabActions !== 'undefined') LabActions.updateContainerChemList(container);
+                    }
+                });
+            }
+            e.preventDefault(); 
+        }
+    });
+
+        document.addEventListener('mousemove', (e) => { 
+            if (!active) return; 
+            active.style.left = (e.clientX - offset.x) + "px"; 
+            active.style.top = (e.clientY - offset.y) + "px"; 
+            if (magnifierActive) updateMagnifierView();
+        });
+
+
+document.addEventListener('mouseup', () => { 
+    if (active) { 
+        const img = active.querySelector('img');
+        
+        // THÊM DÒNG NÀY: Kiểm tra va chạm nếu vật đang kéo là Đinh sắt
+        if (img && img.src.includes("Dinhsat")) {
+            if(typeof LabActions !== 'undefined') LabActions.handleSolidInteraction(active);
+        }
+
+        // Các logic cũ giữ nguyên
+        if (img && img.alt.includes("Quỳ tím")) if(typeof LabActions !== 'undefined') LabActions.handleLitmusSpecial(active);
+        if(typeof LabActions !== 'undefined') LabActions.checkAllGlobalReactions();
+        active.style.zIndex = Math.floor(parseInt(active.style.top)) + 500; 
+        active = null; 
+    } 
+});
+
+    }
+
+
+        function toggleMagnifier() {
+            magnifierActive = !magnifierActive;
+            const glass = document.getElementById('magnifier-glass');
+            const btn = document.getElementById('mag-floating-btn');
+            if (magnifierActive) {
+                glass.style.display = 'block';
+                btn.style.background = "var(--gold-accent)";
+                updateMagnifierView();
+            } else {
+                glass.style.display = 'none';
+                btn.style.background = "var(--primary-blue)";
+            }
+        }
+
+        function updateMagnifierView() {
+            if (!magnifierActive) return;
+            const content = document.getElementById('magnifier-content');
+            const workbench = document.getElementById('workbench-area');
+            content.innerHTML = workbench.innerHTML;
+        }
+
+        document.getElementById('step5').addEventListener('mousemove', (e) => {
+            if (!magnifierActive) return;
+            const glass = document.getElementById('magnifier-glass');
+            const content = document.getElementById('magnifier-content');
+            const area = document.getElementById('step5');
+            const rect = area.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            glass.style.left = (x - 100) + "px";
+            glass.style.top = (y - 100) + "px";
+            const zoom = 2;
+            content.style.left = (-(x * zoom) + 100) + "px";
+            content.style.top = (-(y * zoom) + 100) + "px";
+        });
+
+        function goToStep5() {
+            showScreen('step5');
+            const area = document.getElementById('workbench-area'); area.innerHTML = "";
+            finalSelection.tools.forEach((n, i) => area.appendChild(createDraggableItem(n, 350 + (i * 150), 430, "glassware")));
+            finalSelection.chems.forEach((n, i) => area.appendChild(createDraggableItem(n, 400 + (i * 190), 320, "reagent")));
+            setupDragging();
+            speak("Chào bạn! Hãy nhấp đúp vào dụng cụ để thao tác hoặc kéo thả hóa chất.", null, 'dr-avatar-s5');
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
