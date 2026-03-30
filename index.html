@@ -11,6 +11,7 @@
     <script src="reagents.js"></script>
     <script src="actions.js"></script> 
     <script src="reactions.js"></script>
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=mrZyBS2m"></script>
     <style>
         /* --- GIỮ NGUYÊN 100% STYLE GỐC --- */
         :root {
@@ -234,13 +235,30 @@
         let checks = { blouse: false, glasses: false, canCheckRules: false };
         let magnifierActive = false;
 
-        function speak(text, callback, avatarId = 'dr-avatar-s3') {
-            synth.cancel(); const m = new SpeechSynthesisUtterance(text); m.lang = 'vi-VN';
-            const v = synth.getVoices().find(v => v.lang.includes('vi') && (v.name.includes('Google Lê') || v.name.includes('Nam'))) || synth.getVoices()[0];
-            m.voice = v; const av = document.getElementById(avatarId); if(av) av.classList.add('speaking');
-            m.onend = () => { if(av) av.classList.remove('speaking'); if (callback) callback(); };
-            setTimeout(() => synth.speak(m), 100);
-        }
+function speak(text, callback, avatarId = 'dr-avatar-s3') {
+    // Kiểm tra thư viện đã tải xong chưa
+    if (typeof responsiveVoice !== 'undefined') {
+        // Dừng tất cả các giọng đang nói dở
+        responsiveVoice.cancel();
+
+        const av = document.getElementById(avatarId);
+        if (av) av.classList.add('speaking');
+
+        // Sử dụng giọng Tiếng Việt chuẩn
+        responsiveVoice.speak(text, "Vietnamese Female", {
+            rate: 1,
+            pitch: 1,
+            volume: 1,
+            onend: function() {
+                if (av) av.classList.remove('speaking');
+                if (callback) callback();
+            }
+        });
+    } else {
+        console.warn("ResponsiveVoice chưa sẵn sàng hoặc thiếu kết nối Internet.");
+        if (callback) callback();
+    }
+} // <--- QUAN TRỌNG: Dấu này đóng hàm speak để các hàm sau được thực thi
 
         function backToStep2() {
             synth.cancel(); magnifierActive = false;
@@ -299,11 +317,11 @@ const eqDisplay = document.getElementById('equation-display');
             if (!sel) return alert("Chọn thí nghiệm!");
             window.currentExp = experimentData[gs][ls].find(e => e.name === sel); 
             currentExp = window.currentExp;
-            showScreen('step3'); speak("khoan đã, hãy trang bị bảo hộ."); 
+            showScreen('step3'); speak("khoan đã, hãy trang bị bảo hộ nào."); 
         }
 
         function checkItem(i) { if (i === 'blouse' || i === 'glasses') { if (checks[i]) return; checks[i] = true; document.getElementById('ok-' + i).style.display = 'block'; speak(i === 'blouse' ? "Đã mặc áo." : "Đã đeo kính.", () => { if (checks.blouse && checks.glasses) setTimeout(() => speak("Hãy đọc nội quy nào", () => checks.canCheckRules = true), 500); }); } else if (i === 'rules' && checks.canCheckRules) { const o = document.getElementById('rules-overlay'); o.style.display = 'block'; setTimeout(() => o.classList.add('show'), 50); } }
-        function closeRules() { document.getElementById('rules-overlay').classList.remove('show'); setTimeout(() => { document.getElementById('rules-overlay').style.display = 'none'; document.getElementById('ok-rules').style.display = 'block'; showScreen('step4'); setupSidebar("TOOLS"); speak("Hãy chuẩn bị dụng cụ thí nghiệm.", null, 'dr-avatar-s4'); }, 800); }
+        function closeRules() { document.getElementById('rules-overlay').classList.remove('show'); setTimeout(() => { document.getElementById('rules-overlay').style.display = 'none'; document.getElementById('ok-rules').style.display = 'block'; showScreen('step4'); setupSidebar("TOOLS"); speak("Tốt lắm, Hãy chuẩn bị dụng cụ thí nghiệm.", null, 'dr-avatar-s4'); }, 800); }
         function initGrades() { const gs = document.getElementById('grade-select'); gs.innerHTML = '<option value="">-- Lớp --</option>'; Object.keys(experimentData).forEach(g => gs.innerHTML += `<option value="${g}">${g}</option>`); }
         function updateLessons() { const g = document.getElementById('grade-select').value; const ls = document.getElementById('lesson-select'); ls.innerHTML = '<option value="">-- Bài --</option>'; if (g) { ls.disabled = false; Object.keys(experimentData[g]).forEach(l => ls.innerHTML += `<option value="${l}">${l}</option>`); } }
         function updateExperiments() { const g = document.getElementById('grade-select').value; const l = document.getElementById('lesson-select').value; const es = document.getElementById('exp-select'); es.innerHTML = '<option value="">-- Thí nghiệm --</option>'; if (l) { es.disabled = false; experimentData[g][l].forEach(e => es.innerHTML += `<option value="${e.name}">${e.name}</option>`); } }
@@ -428,7 +446,7 @@ document.addEventListener('mouseup', () => {
             finalSelection.tools.forEach((n, i) => area.appendChild(createDraggableItem(n, 350 + (i * 150), 430, "glassware")));
             finalSelection.chems.forEach((n, i) => area.appendChild(createDraggableItem(n, 400 + (i * 190), 320, "reagent")));
             setupDragging();
-            speak("Chào bạn! Hãy nhấp đúp vào dụng cụ để thao tác hoặc kéo thả hóa chất.", null, 'dr-avatar-s5');
+            speak("Chào mừng bạn đến với bàn thực hành! Hãy dành chút thời gian sắp xếp lại các món đồ cho ngăn nắp nào. Đừng quên nhấp đúp vào dụng cụ để khám phá cách sử dụng nhé!", null, 'dr-avatar-s5');
         }
 
         window.onload = initApp;

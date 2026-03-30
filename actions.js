@@ -1,4 +1,4 @@
-/* --- actions.js: PHIÊN BẢN CHUẨN HÓA DỰA TRÊN TRẠNG THÁI HÓA CHẤT --- */
+/* --- actions.js: PHIÊN BẢN TỐI ƯU HÀNG ĐỢI ÂM THANH + LOGIC NHIỆT ĐỘ --- */
 
 const ChemClass = {
     acids: ['hcl', 'h2so4', 'hno3', 'ch3cooh', 'axit'],
@@ -17,19 +17,17 @@ const SolidTransfer = {
         if (foundBottle) {
             const chemImg = foundBottle.querySelector('img');
             const chemName = chemImg ? chemImg.alt : "";
-            
-            // KIỂM TRA TRẠNG THÁI TỪ CỘT 5
             const state = LabActions.getChemicalState(chemName); 
 
             if (state !== "rắn") {
-                if (typeof speak !== 'undefined') speak("Đây là chất lỏng, em nên dùng ống hút để lấy nhé.");
+                LabActions.speak("Đây là chất lỏng, em nên dùng ống hút để lấy nhé.");
                 return false; 
             }
 
             this.isHoldingSolid = true;
             this.currentSolid = chemName;
             this.showSolidOnTool(el, true);
-            if (typeof speak !== 'undefined') speak("Đã lấy một lượng hóa chất");
+            LabActions.speak("Đã lấy một lượng hóa chất");
             return true;
         }
         return false;
@@ -45,20 +43,6 @@ const SolidTransfer = {
 
             const chemFormula = LabActions.getFormulaByName(this.currentSolid).toLowerCase();
             
-            if (window.currentExp && window.currentExp.info) {
-                const extraFormula = LabActions.getFormulaByName(window.currentExp.info.trim()).toLowerCase();
-                if (chemFormula === extraFormula) {
-                    const mainChemsRequired = window.currentExp.chems.split(',')
-                        .map(c => LabActions.getFormulaByName(c.trim()).toLowerCase())
-                        .filter(f => f !== extraFormula);
-                    const chemListInItem = foundContainer.dataset.chemList ? foundContainer.dataset.chemList.toLowerCase() : "";
-                    if (!mainChemsRequired.every(mc => chemListInItem.includes(mc))) {
-                        if (typeof speak !== 'undefined') speak("Hóa chất này nên được thêm vào sau cùng em nhé.");
-                        return false; 
-                    }
-                }
-            }
-
             let currentList = foundContainer.dataset.chemList || "";
             if (!currentList.toLowerCase().includes(chemFormula)) {
                 foundContainer.dataset.chemList = currentList ? `${currentList}, ${chemFormula}` : chemFormula;
@@ -67,7 +51,7 @@ const SolidTransfer = {
             this.createSolidDropEffect(foundContainer);
             this.isHoldingSolid = false;
             this.showSolidOnTool(el, false);
-            if (typeof speak !== 'undefined') speak("Đã cho hóa chất vào ống nghiệm.");
+            LabActions.speak("Đã cho hóa chất vào ống nghiệm.");
             LabActions.checkAllGlobalReactions();
             return true;
         }
@@ -125,29 +109,14 @@ const LiquidTransfer = {
         if (foundBottle) {
             const chemImg = foundBottle.querySelector('img');
             const chemName = chemImg ? chemImg.alt : "";
-            
             const state = LabActions.getChemicalState(chemName);
 
             if (state === "rắn") {
-                if (typeof speak !== 'undefined') speak("Đây là chất rắn, em không thể dùng ống hút. Hãy dùng muỗng nhé!");
+                LabActions.speak("Đây là chất rắn, em không thể dùng ống hút. Hãy dùng muỗng nhé!");
                 return false; 
             }
 
-            if (chemName.toLowerCase().includes("quỳ tím")) return false;
-
-            if (chemName.toLowerCase().includes("phenolphtalein")) {
-                let hasBase = false;
-                document.querySelectorAll('.draggable-item').forEach(item => {
-                    const chemList = item.dataset.chemList ? item.dataset.chemList.toLowerCase() : "";
-                    if (chemList.includes("naoh") || chemList.includes("ba(oh)2")) hasBase = true;
-                });
-                if (!hasBase) {
-                    if (typeof speak !== 'undefined') speak("Em cần cho dung dịch kiềm vào trước khi thử với Phenolphtalein nhé!");
-                    return false;
-                }
-            }
-
-            if (typeof speak !== 'undefined') speak("Đã lấy dung dịch.");
+            LabActions.speak("Đã lấy dung dịch.");
             let suckColor = "rgba(128,128,128,0.5)"; 
             if (chemName.toLowerCase().includes("cuso4")) suckColor = "rgba(0, 112, 255, 0.6)"; 
             
@@ -164,12 +133,9 @@ const LiquidTransfer = {
         if (!el.dataset.currentChem) return false;
         const foundContainer = LabActions.checkToolCollision(el, false);
         if (foundContainer) {
-            const containerImg = foundContainer.querySelector('img');
-            if (containerImg && containerImg.alt.toLowerCase().includes("quỳ tím")) return false;
-
             const formula = el.dataset.currentChem;
             const currentColor = el.dataset.currentColor || "rgba(128,128,128,0.5)";
-            if (typeof speak !== 'undefined') speak("Đang nhỏ dung dịch...");
+            LabActions.speak("Đang nhỏ dung dịch...");
             LabActions.createDropEffect(el, currentColor);
             LabActions.transferWithLogic(foundContainer, currentColor, formula);
             liq.style.height = "0%";
@@ -182,8 +148,14 @@ const LiquidTransfer = {
 };
 
 const LabActions = {
-    allowedContainers: ["Bình cầu", "Bình định mức", "Bình tam giác", "Chén thủy tinh", "Cốc thủy tinh", "Ống nghiệm"],
+    allowedContainers: ["Bình cầu", "Bình định mức", "Bình tam giác", "Chén thủy tinh", "Cốc thủy tinh", "Ống nghiệm", "Cây đinh"],
     
+    // HỆ THỐNG ÂM THANH ƯU TIÊN
+    speechQueue: [],
+    isSpeaking: false,
+    isPriorityPlaying: false,
+    currentUtterance: null,
+
     toolConfigs: {
         "Ống nghiệm": { bottom: "35px", width: "10%", radius: "2px 2px 15px 15px", receiveHeight: 15 },
         "Cốc thủy tinh": { bottom: "30px", width: "50%", radius: "2px 2px 5px 5px", receiveHeight: 10 },
@@ -193,38 +165,113 @@ const LabActions = {
         "Mặc định": { bottom: "20px", width: "30%", radius: "2px", receiveHeight: 12 }
     },
 
-getChemicalState: function(name) {
-    if (!name || typeof chemicalDataRaw === 'undefined') return "lỏng";
+handleLitmusSpecial: function(el) {
+    // Tìm xem quỳ tím có đang chạm vào ống nghiệm/cốc nào không
+    const container = this.checkToolCollision(el, false);
     
-    const cleanName = name.trim().toLowerCase();
-    const lines = chemicalDataRaw.trim().split('\n');
-
-    for (let line of lines) {
-        // Tách dòng thành các cột: [Loại, Tên, Ảnh, Công thức, Trạng thái]
-        const columns = line.split('|').map(s => s.trim());
+    if (container) {
+        // Logic đổi màu dựa trên dataset.chemList của container
+        const chems = container.dataset.chemList || "";
+        const img = el.querySelector('img');
         
-        if (columns.length >= 5) {
-            const itemName = columns[1].toLowerCase();    // Cột 2: Zinc (kẽm)
-            const itemFormula = columns[3].toLowerCase(); // Cột 4: Zn
-            const state = columns[4].toLowerCase();       // Cột 5: rắn/lỏng
+        if (chems.includes("hcl") || chems.includes("h2so4")) {
+            img.style.filter = "sepia(1) saturate(5) hue-rotate(-50deg)"; // Hóa đỏ
+            this.speak("Quỳ tím hóa đỏ do tiếp xúc với axit");
+        } else if (chems.includes("naoh")) {
+            img.style.filter = "sepia(1) saturate(5) hue-rotate(180deg)"; // Hóa xanh
+            this.speak("Quỳ tím hóa xanh do tiếp xúc với bazơ");
+        }
+        // Thêm hiệu ứng nhúng xuống (ví dụ: hạ thấp vị trí)
+        el.style.transform = "translateY(20px)";
+    } else {
+        // Nếu click ở ngoài thì nhấc lên lại
+        el.style.transform = "translateY(0)";
+    }
+},
 
-            // Kiểm tra: Nếu tên truyền vào khớp với Tên hoặc Công thức trong data
-            if (cleanName === itemName || cleanName === itemFormula) {
-                return state; 
+
+    speak: function(text, isPriority = false) {
+        if (!text) return;
+        if (this.isPriorityPlaying && !isPriority) return;
+        if (isPriority || !this.isPriorityPlaying) {
+            window.speechSynthesis.cancel();
+            this.speechQueue = []; 
+            this.isSpeaking = false;
+        }
+        this.speechQueue.push({ text, isPriority });
+        if (!this.isSpeaking) {
+            this.processSpeechQueue();
+        }
+    },
+
+processSpeechQueue: function() {
+    if (this.speechQueue.length === 0) {
+        this.isSpeaking = false;
+        this.isPriorityPlaying = false;
+        return;
+    }
+    
+    this.isSpeaking = true;
+    const item = this.speechQueue.shift();
+    
+    // Sử dụng ResponsiveVoice thay cho speechSynthesis
+    responsiveVoice.speak(item.text, "Vietnamese Female", {
+        onstart: () => { 
+            this.isPriorityPlaying = item.isPriority; 
+        },
+        onend: () => {
+            if (item.isPriority) this.isPriorityPlaying = false;
+            this.isSpeaking = false;
+            this.processSpeechQueue(); // Gọi mục tiếp theo trong hàng đợi
+        }
+    });
+},
+
+
+    getChemicalState: function(name) {
+        if (!name || typeof chemicalDataRaw === 'undefined') return "lỏng";
+        const cleanName = name.trim().toLowerCase();
+        const lines = chemicalDataRaw.trim().split('\n');
+        for (let line of lines) {
+            const columns = line.split('|').map(s => s.trim());
+            if (columns.length >= 5) {
+                const itemName = columns[1].toLowerCase();
+                const itemFormula = columns[3].toLowerCase();
+                const state = columns[4].toLowerCase();
+                if (cleanName === itemName || cleanName === itemFormula) return state; 
             }
         }
-    }
-    // Nếu không tìm thấy trong danh sách, mặc định coi là chất lỏng
-    return "lỏng";
-},
+        return "lỏng";
+    },
+
+    // BỔ SUNG: KHÔI PHỤC HÀM KIỂM TRA ĐANG ĐỐT NÓNG TỪ PHIÊN BẢN CŨ
+    isHeatingNow: function(container) {
+        const cRect = container.getBoundingClientRect();
+        let isHot = false;
+        document.querySelectorAll('.draggable-item').forEach(lamp => {
+            const flame = lamp.querySelector('.lamp-flame');
+            if (flame && flame.style.display === "block") {
+                const lRect = lamp.getBoundingClientRect();
+                // Logic kiểm tra va chạm: container phải nằm trên ngọn lửa trong phạm vi cho phép
+                if (Math.abs((cRect.left + cRect.width/2) - (lRect.left + lRect.width/2)) < 90 && 
+                    (cRect.bottom > lRect.top - 150 && cRect.bottom < lRect.top + 100)) {
+                    isHot = true;
+                }
+            }
+        });
+        return isHot;
+    },
 
     execute: function(el, toolName) {
         try {
+            if (toolName.includes("Đinh") || toolName.includes("sắt")) {
+                this.handleSolidInteraction(el);
+                return;
+            }
             if (toolName.includes("Quỳ tím")) { 
                 this.handleLitmusSpecial(el);
                 return; 
             }
-            
             const actionData = this.getRawAction(toolName);
             if (!actionData || actionData === "không") return;
             const actions = actionData.split("/").map(s => s.trim());
@@ -243,94 +290,74 @@ getChemicalState: function(name) {
                 if (act.includes("dừng")) el.classList.remove('shake-anim');
                 const flame = el.querySelector('.lamp-flame');
                 if (flame) flame.style.display = (act.includes("bật") || act.includes("đốt")) ? "block" : "none";
-                if (typeof speak !== 'undefined') speak("Đang " + actions[step]);
+                this.speak("Đang " + actions[step]);
                 success = true;
             }
             if (success) el.dataset.step = (step + 1) % actions.length;
         } catch (e) { console.error("Lỗi execute:", e); }
     },
 
-    handleLitmusSpecial: function(litmusEl) {
-        try {
-            const litmusRect = litmusEl.getBoundingClientRect();
-            let target = null;
-            document.querySelectorAll('.draggable-item').forEach(el => {
-                if (el === litmusEl) return;
-                const container = el.querySelector('.glass-container');
-                if (!container) return;
-                const r = container.getBoundingClientRect();
-                const isColliding = !(litmusRect.right < r.left - 20 || litmusRect.left > r.right + 20 || litmusRect.bottom < r.top - 20 || litmusRect.top > r.bottom + 20);
-                if (isColliding && el.dataset.chemList) target = el;
-            });
-            if (target) {
-                const chems = target.dataset.chemList.toLowerCase();
-                let effect = "";
-                if (ChemClass.acids.some(a => chems.includes(a))) effect = "màu đỏ";
-                else if (ChemClass.bases.some(b => chems.includes(b))) effect = "màu xanh";
-                
-                if (effect && typeof LabReactions !== 'undefined') {
-                    LabReactions.apply(litmusEl, effect, true);
-                    if (litmusEl.dataset.lastEffect !== effect) {
-                        if (typeof speak !== 'undefined') speak("Giấy quỳ tím chuyển sang " + effect);
-                        litmusEl.dataset.lastEffect = effect;
-                    }
-                }
+    handleSolidInteraction: function(solidEl) {
+        const solidRect = solidEl.getBoundingClientRect();
+        let foundContainer = null;
+        document.querySelectorAll('.draggable-item').forEach(el => {
+            if (el === solidEl) return;
+            const r = el.getBoundingClientRect();
+            const isColliding = !(solidRect.right < r.left - 20 || solidRect.left > r.right + 20 || solidRect.bottom < r.top - 20 || solidRect.top > r.bottom + 20);
+            if (isColliding) {
+                const img = el.querySelector('img');
+                if (img && this.allowedContainers.some(name => img.alt.includes(name))) foundContainer = el;
             }
-        } catch (e) { console.error("Lỗi quỳ tím:", e); }
+        });
+        if (foundContainer) {
+            const formula = "fe";
+            let chems = foundContainer.dataset.chemList ? foundContainer.dataset.chemList.split(',') : [];
+            if (!chems.includes(formula)) {
+                chems.push(formula);
+                foundContainer.dataset.chemList = chems.join(',');
+                this.speak("Đã cho đinh sắt vào ống nghiệm");
+                this.checkAllGlobalReactions();
+            }
+            return true;
+        }
+        return false;
     },
 
     checkAllGlobalReactions: function() {
         if (!window.currentExp) return;
-        const mainChems = window.currentExp.chems.split(',').map(name => this.getFormulaByName(name.trim()));
+        const mainChems = window.currentExp.chems.split(',').map(name => this.getFormulaByName(name.trim()).toLowerCase());
+        
         document.querySelectorAll('.draggable-item').forEach(el => {
             const chemListAttr = el.dataset.chemList;
-            if (chemListAttr) {
-                let chemsInContainer = chemListAttr.split(',').map(c => c.trim().toLowerCase());
-                
-                if (chemsInContainer.includes("naoh") && chemsInContainer.includes("phenolphtalein")) {
-                    if (el.dataset.reacted !== "true") {
-                        if (typeof LabReactions !== 'undefined') LabReactions.apply(el, "màu hồng");
-                        el.dataset.reacted = "true";
-                    }
-                } 
-else if (mainChems.every(f => chemsInContainer.includes(f.toLowerCase())) && mainChems.length >= 2) {
-                const needsHeat = window.currentExp.tools.includes("Đèn cồn") || window.currentExp.tools.includes("Bếp");
-                
-                if (!needsHeat || (needsHeat && this.isHeatingNow(el))) {
-                    if (el.dataset.reacted !== "true") {
-                        // 1. Áp dụng hiệu ứng hình ảnh
+            if (!chemListAttr) return;
+            let chemsInContainer = chemListAttr.split(',').map(c => c.trim().toLowerCase());
+            
+            if (mainChems.every(f => chemsInContainer.includes(f)) && mainChems.length >= 2) {
+                if (el.dataset.reacted !== "true") {
+                    
+                    // CHỈNH SỬA: KIỂM TRA NHIỆT ĐỘ NHƯ ACTIONS_OLD.JS
+                    const needsHeat = window.currentExp.tools.includes("Đèn cồn") || window.currentExp.tools.includes("Bếp");
+                    if (!needsHeat || (needsHeat && this.isHeatingNow(el))) {
+                        
                         if (typeof LabReactions !== 'undefined') LabReactions.apply(el, window.currentExp.effect);
                         
-                        // 2. Hiển thị phương trình hóa học (Cột 6 trong data.js tương ứng window.currentExp.eq)
                         const eqDisplay = document.getElementById('equation-display');
                         if (eqDisplay && window.currentExp.eq) {
                             eqDisplay.innerText = window.currentExp.eq;
                             eqDisplay.style.display = "block";
                         }
-
-// 3. Thông báo hiện tượng TRƯỚC, sau đó mới đến lý thuyết
-    if (typeof speak !== 'undefined') {
-        // Gọi speak cho hiện tượng (Cột 8)
-        speak("he he đã xảy ra phản ứng: " + window.currentExp.effect, () => {
-            
-            // Hàm callback này chỉ chạy KHI phần hiện tượng đã nói xong hoàn toàn
-            console.log("Đã nói xong hiện tượng, chờ 5 giây...");
-            
-            setTimeout(() => {
-                if (window.currentExp.description) {
-                    // Gọi speak cho lý thuyết (Cột 7)
-                    speak("Giải thích lý thuyết: " + window.currentExp.description);
+                        
+                        this.speak("Đã xảy ra phản ứng: " + window.currentExp.effect, true);
+                        if (window.currentExp.description) {
+                            this.speak("Giải thích lý thuyết: " + window.currentExp.description, true);
+                        }
+                        
+                        el.dataset.reacted = "true";
+                    }
                 }
-            }, 2000); // Khoảng nghỉ 2 giây giữa 2 phần
-        }, 'dr-avatar-s5'); 
-    }
-
-    el.dataset.reacted = "true";
-}                }
             }
-        }
-    });
-},
+        });
+    },
 
     transferWithLogic: function(targetEl, color, formula) {
         const targetLiq = targetEl.querySelector('.liquid-layer');
@@ -365,19 +392,6 @@ else if (mainChems.every(f => chemsInContainer.includes(f.toLowerCase())) && mai
     getConfig: function(name) {
         for (let key in this.toolConfigs) { if (name.includes(key)) return this.toolConfigs[key]; }
         return this.toolConfigs["Mặc định"];
-    },
-
-    isHeatingNow: function(container) {
-        const cRect = container.getBoundingClientRect();
-        let isHot = false;
-        document.querySelectorAll('.draggable-item').forEach(lamp => {
-            const flame = lamp.querySelector('.lamp-flame');
-            if (flame && flame.style.display === "block") {
-                const lRect = lamp.getBoundingClientRect();
-                if (Math.abs((cRect.left + cRect.width/2) - (lRect.left + lRect.width/2)) < 90 && (cRect.bottom > lRect.top - 150 && cRect.bottom < lRect.top + 100)) isHot = true;
-            }
-        });
-        return isHot;
     },
 
     renderExtra: function(container, toolName) {
@@ -448,3 +462,7 @@ else if (mainChems.every(f => chemsInContainer.includes(f.toLowerCase())) && mai
         return "không";
     }
 };
+
+window.LabActions = LabActions;
+window.LiquidTransfer = LiquidTransfer;
+window.SolidTransfer = SolidTransfer;

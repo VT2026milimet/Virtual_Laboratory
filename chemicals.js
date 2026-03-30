@@ -27,11 +27,11 @@ Kim loại | Aluminium (Nhôm) | Al.jpg | Al | rắn
 Kim loại | Iron (Sắt) | Fe.jpg | Fe | rắn
 Muối | Copper(II)sulfate | CuSO4.jpg | CuSO4 | lỏng
 Muối | Silver nitrate 1% | AgNO3.jpg | AgNO3 | lỏng
-Muối | Barium chloride | BaCl2.jpg | BaCl2 | rắn
+Muối | Barium chloride | BaCl2.jpg | BaCl2 | lỏng
 Muối | Calcium carbonate | CaCO3.jpg | CaCO3 | rắn
-Muối | Sodium chloride | NaCl.jpg | NaCl | rắn
-Muối | Sodium sulfate | Na2SO4.jpg | Na2SO4 | rắn
+Muối | Sodium chloride | NaCl.jpg | NaCl | lỏng
+Muối | Sodium sulfate | Na2SO4.jpg | Na2SO4 | lỏng
 Phi kim | Carbon | C.jpg | C | rắn
-Phi kim | Iodine | I2.jpg | I2 | rắn
+Phi kim | Iodine | I2.jpg | I2 | lỏng
 Phi kim | Sulfur | S.jpg | S | rắn
 `;
